@@ -64,20 +64,28 @@ def run_injector():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 1. Limpieza de DB (Solo para este runner, para no borrar tus otros juegos)
-    print(f"🧹 Limpiando juegos anteriores de {RUNNER}...")
+    # --- NUEVA LÓGICA DE LIMPIEZA SEGURA ---
+    print(f"🧹 Identificando archivos de configuración de {RUNNER} para borrar...")
+    
+    # 1. Obtenemos los 'configpath' de los juegos que vamos a reemplazar (SOLO de esta consola)
+    cursor.execute("SELECT configpath FROM games WHERE runner = ?", (RUNNER,))
+    old_configs = cursor.fetchall()
+    
+    # 2. Borramos físicamente esos archivos .yml específicos
+    for row in old_configs:
+        config_id = row[0]
+        if config_id:
+            yaml_path = os.path.join(CONFIG_DIR_MAIN, f"{config_id}.yml")
+            if os.path.exists(yaml_path):
+                try:
+                    os.remove(yaml_path)
+                except: pass
+
+    # 3. Ahora sí, limpiamos la DB
+    print(f"🧹 Limpiando base de datos de {RUNNER}...")
     cursor.execute("DELETE FROM games WHERE runner = ?", (RUNNER,))
     conn.commit()
-
-    # 2. Limpieza de Archivos YAML viejos (Para evitar conflictos)
-    print("🧹 Limpiando archivos de configuración basura...")
-    if os.path.exists(CONFIG_DIR_MAIN):
-        for f in os.listdir(CONFIG_DIR_MAIN):
-            # Borramos si es un .yml y parece ser del runner actual (por seguridad)
-            # Aquí asumimos que borrarás todo lo generado anteriormente para regenerarlo bien
-            if f.endswith(".yml") and any(x in f for x in ["kof", "mslug", "tekken", "mame"]): 
-                try: os.remove(os.path.join(CONFIG_DIR_MAIN, f))
-                except: pass
+    # ---------------------------------------
 
     current_time = int(time.time())
     count = 0
