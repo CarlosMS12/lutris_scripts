@@ -9,12 +9,12 @@ import ssl
 import subprocess
 import shutil
 from io import BytesIO
-from PIL import Image # <--- NECESITAS INSTALAR ESTO: pip install Pillow
+from PIL import Image # Requiere: pip install Pillow
 
 # ==========================================
 # ⚙️ CONFIGURACIÓN
 # ==========================================
-API_KEY = "TU_API_KEY_AQUI"
+API_KEY = "4e712a33643639391ac4f80886ace444"
 TARGET_RUNNER = "duckstation" # CAMBIA ESTO (mame, duckstation, libretro...)
 
 # CORRECCIONES MANUALES
@@ -25,7 +25,7 @@ MANUAL_FIXES = {
 }
 
 # Ruta MAME
-MAME_EXE = "/usr/games/mame" # Ajusta según tu distro si usas MAME
+MAME_EXE = "/usr/games/mame"
 # ==========================================
 
 # RUTAS
@@ -41,7 +41,6 @@ ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 
 def get_mame_candidates(slug):
-    # (Misma lógica de MAME que antes, la omito para ahorrar espacio pero debe estar aquí)
     candidates = []
     return candidates
 
@@ -100,16 +99,12 @@ def download(url, path):
 def download_and_convert_icon(url, save_path):
     """
     Descarga la imagen y la CONVIERTE a PNG real usando Pillow.
-    Esto soluciona el error de iconos invisibles en Linux Mint.
     """
     try:
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with urllib.request.urlopen(req, context=ctx) as response:
-            # 1. Leer imagen en memoria
             img_data = response.read()
             image = Image.open(BytesIO(img_data))
-
-            # 2. Convertir y guardar como PNG
             image.save(save_path, "PNG")
             return True
     except Exception as e:
@@ -131,7 +126,7 @@ def run_decorator():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    print(f"🎨 Decorador V5 (Mint Fix - Pillow) para: {TARGET_RUNNER}")
+    print(f"🎨 Decorador V5 Optimizado (Mint Fix + Salto Inteligente) para: {TARGET_RUNNER}")
     cursor.execute("SELECT id, slug, name FROM games WHERE runner = ? AND installed = 1", (TARGET_RUNNER,))
     games = cursor.fetchall()
 
@@ -142,14 +137,16 @@ def run_decorator():
         p_icon_lutris = os.path.join(LUTRIS_ICONS_DIR, f"{slug}.png")
         p_icon_system = os.path.join(SYSTEM_ICONS_DIR, f"lutris_{slug}.png")
 
-        # OJO: Quitamos el check de "si ya existe" para forzar la reparación de iconos malos
-        # Si quieres velocidad, descomenta las siguientes líneas después de arreglarlo una vez:
-        # if os.path.exists(p_cover) and os.path.exists(p_banner) and os.path.exists(p_icon_system):
-        #    continue
+        # --- LÓGICA DE SALTO ---
+        # Si existen las 3 piezas clave (Cover, Banner e Icono de Sistema), no descargamos nada.
+        # Esto hace que el script sea super rápido en la segunda pasada.
+        if os.path.exists(p_cover) and os.path.exists(p_banner) and os.path.exists(p_icon_system):
+            print(f"⏩ Saltando {slug} (Todo listo)")
+            continue
 
         print(f"\n🔍 Procesando: {slug}")
 
-        # Búsqueda (simplificada aquí, usa la lógica completa de V4)
+        # Búsqueda
         clean = clean_console_name(raw_name)
         candidates = []
         if slug in MANUAL_FIXES: candidates.append(MANUAL_FIXES[slug])
@@ -171,7 +168,7 @@ def run_decorator():
             images = sgdb_get_images(found_id)
             updated = False
 
-            # Cover y Banner (Descarga normal)
+            # Cover y Banner (Solo si faltan)
             if images.get('cover') and not os.path.exists(p_cover):
                 download(images['cover'], p_cover)
                 updated = True
@@ -179,10 +176,9 @@ def run_decorator():
                 download(images['banner'], p_banner)
                 updated = True
 
-            # --- ICONOS CON CONVERSIÓN ---
-            if images.get('icon'):
+            # Iconos (Solo si faltan)
+            if images.get('icon') and not os.path.exists(p_icon_system):
                 print("      🔄 Convirtiendo icono a PNG real...")
-                # Usamos la nueva función con Pillow
                 if download_and_convert_icon(images['icon'], p_icon_lutris):
                     try:
                         shutil.copy2(p_icon_lutris, p_icon_system)

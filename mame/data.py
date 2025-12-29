@@ -8,6 +8,8 @@ import time
 import ssl
 import subprocess
 import shutil
+from io import BytesIO
+from PIL import Image # Requiere: pip install Pillow
 
 # ==========================================
 # ⚙️ CONFIGURACIÓN
@@ -117,6 +119,21 @@ def download(url, path):
         return True
     except: return False
 
+def download_and_convert_icon(url, save_path):
+    """
+    Descarga la imagen y la CONVIERTE a PNG real usando Pillow.
+    """
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, context=ctx) as response:
+            img_data = response.read()
+            image = Image.open(BytesIO(img_data))
+            image.save(save_path, "PNG")
+            return True
+    except Exception as e:
+        print(f"      ⚠️ Error convirtiendo icono: {e}")
+        return False
+
 def run_decorator():
     if API_KEY == "TU_API_KEY_AQUI":
         print("❌ Error: Falta la API KEY.")
@@ -183,14 +200,15 @@ def run_decorator():
             if images.get('cover') and download(images['cover'], p_cover): updated = True
             if images.get('banner') and download(images['banner'], p_banner): updated = True
             
-            # --- MAGIA DE ICONOS ---
+            # --- MAGIA DE ICONOS (Con conversión a PNG real) ---
             if images.get('icon'):
-                # 1. Descargar para Lutris Interno
-                if download(images['icon'], p_icon_lutris):
+                print("      🔄 Convirtiendo icono a PNG real...")
+                # 1. Descargar y convertir para Lutris Interno
+                if download_and_convert_icon(images['icon'], p_icon_lutris):
                     # 2. Copiar para el Sistema (lutris_slug.png)
                     try:
                         shutil.copy2(p_icon_lutris, p_icon_system)
-                        print("      👾 Icono instalado en Sistema y Lutris.")
+                        print("      👾 Icono arreglado instalado en Sistema y Lutris.")
                         updated = True
                     except Exception as e:
                         print(f"      ⚠️ Error copiando icono al sistema: {e}")
