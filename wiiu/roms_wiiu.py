@@ -11,10 +11,10 @@ from lutris_detector import get_lutris_paths
 # ==========================================
 # ⚡ CONFIGURACIÓN (CAMBIA ESTO SEGÚN LA CONSOLA)
 # ==========================================
-ROM_FOLDER = "/home/carlos/Descargas/Moon/Roms/PS1/"
-EXTENSION = ".chd"
-RUNNER = "duckstation"       # Ej: mame, libretro, pcsx2
-PLATFORM = "Sony PlayStation"   # Ej: Arcade, Sony PlayStation, Nintendo 64
+ROM_FOLDER = "/home/carlos/Descargas/Moon/Roms/wiiu/"
+EXTENSION = ".wud"
+RUNNER = "cemu"       # Ej: mame, libretro, pcsx2
+PLATFORM = "Nintendo WII U"   # Ej: Arcade, Sony PlayStation, Nintendo 64
 # ==========================================
 
 # 🕵️‍♂️ DETECCIÓN AUTOMÁTICA DE LUTRIS (NATIVO/FLATPAK)

@@ -20,7 +20,7 @@ from lutris_detector import get_lutris_paths
 # ⚙️ CONFIGURACIÓN
 # ==========================================
 API_KEY = "4e712a33643639391ac4f80886ace444"
-TARGET_RUNNER = "citra" # CAMBIA ESTO (mame, duckstation, libretro...)
+TARGET_RUNNER = "cemu" # CAMBIA ESTO (mame, duckstation, libretro...)
 
 # CORRECCIONES MANUALES
 MANUAL_FIXES = {
@@ -77,23 +77,60 @@ def sgdb_get_images(game_id):
     base = "https://www.steamgriddb.com/api/v2"
     headers = {'Authorization': f'Bearer {API_KEY}'}
     urls = {}
+    
+    # Función auxiliar para filtrar imágenes rotas/DMCA
+    def get_valid_image(endpoint, skip_first=False, skip_count=1):
+        try:
+            req = urllib.request.Request(f"{base}{endpoint}", headers=headers)
+            with urllib.request.urlopen(req, context=ctx) as r:
+                data = json.loads(r.read().decode())
+                
+                if data.get('success') and data.get('data'):
+                    images = data['data']
+                    
+                    # Si queremos saltar imágenes (anti-DMCA)
+                    if skip_first and len(images) > skip_count:
+                        # Saltamos las primeras N imágenes y tomamos la siguiente
+                        return images[skip_count]['url']
+                    
+                    # Si no hay suficientes imágenes para saltar, tomamos la primera
+                    return images[0]['url']
+        except Exception as e:
+            print(f"      ⚠️ Error obteniendo imagen: {e}")
+        return None
+    
     try:
-        # Cover
-        r = urllib.request.Request(f"{base}/grids/game/{game_id}?dimensions=600x900&styles=alternate,material", headers=headers)
-        with urllib.request.urlopen(r, context=ctx) as resp:
-            d = json.loads(resp.read().decode())
-            if d['data']: urls['cover'] = d['data'][0]['url']
-        # Banner
-        r = urllib.request.Request(f"{base}/heroes/game/{game_id}", headers=headers)
-        with urllib.request.urlopen(r, context=ctx) as resp:
-            d = json.loads(resp.read().decode())
-            if d['data']: urls['banner'] = d['data'][0]['url']
-        # Icon
-        r = urllib.request.Request(f"{base}/icons/game/{game_id}", headers=headers)
-        with urllib.request.urlopen(r, context=ctx) as resp:
-            d = json.loads(resp.read().decode())
-            if d['data']: urls['icon'] = d['data'][0]['url']
-    except: pass
+        # Para Wii U (Nintendo), intentamos saltar la primera si hay muchas opciones
+        # Cover (Ordenado por score, salta la primera)
+        cover_url = get_valid_image(
+            f"/grids/game/{game_id}?dimensions=600x900&styles=alternate,material&sort=score",
+            skip_first=True,
+            skip_count=1
+        )
+        if cover_url:
+            urls['cover'] = cover_url
+        
+        # Banner (Ordenado por score, salta las primeras 2 para mayor seguridad)
+        banner_url = get_valid_image(
+            f"/heroes/game/{game_id}?sort=score",
+            skip_first=True,
+            skip_count=2  # Los banners de Nintendo suelen tener más basura
+        )
+        if banner_url:
+            urls['banner'] = banner_url
+        
+        # Icon (Ordenado por score, salta la primera)
+        icon_url = get_valid_image(
+            f"/icons/game/{game_id}?sort=score",
+            skip_first=True,
+            skip_count=1
+        )
+        if icon_url:
+            urls['icon'] = icon_url
+            
+    except Exception as e:
+        print(f"      ⚠️ Error general en sgdb_get_images: {e}")
+    
     return urls
 
 def download(url, path):
@@ -152,7 +189,7 @@ def run_decorator():
             print(f"⏩ Saltando {slug} (Todo listo)")
             continue
 
-        print(f"\n🔍 Procesando: {slug}")
+        print(f"\n� Procesando: {slug}")
 
         # Búsqueda
         clean = clean_console_name(raw_name)
@@ -207,7 +244,7 @@ def run_decorator():
 
     conn.close()
     print(f"\n🎉 ¡Hecho! {count} juegos actualizados.")
-    print("👉 EJECUTA ESTO EN TERMINAL: gtk-update-icon-cache -f -t ~/.local/share/icons/hicolor")
+    print("� EJECUTA ESTO EN TERMINAL: gtk-update-icon-cache -f -t ~/.local/share/icons/hicolor")
     print("👉 Y borra caché de Lutris: rm -rf ~/.cache/lutris/coverart/*")
 
 if __name__ == "__main__":

@@ -1,0 +1,47 @@
+# Proyecto Visual - No incluir en el repositorio
+proyecto_visual/
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+.venv
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archivos de configuración local
+*.local
+.env
+
+# Logs y bases de datos temporales
+*.log
+*.db
+*.sqlite
+*.sqlite3
+
+# Archivos de caché
+.cache/
+*.cache
+
+# Archivos temporales
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Archivos de sistema
+Thumbs.db
+.directory

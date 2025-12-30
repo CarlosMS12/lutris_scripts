@@ -2,9 +2,14 @@ import os
 import sqlite3
 import time
 import textwrap
+import sys
+
+# Importar el detector universal
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lutris_detector import get_lutris_paths
 
 # ==========================================
-# ⚙️ CONFIGURACIÓN (CAMBIA ESTO SEGÚN LA CONSOLA)
+# ⚡ CONFIGURACIÓN (CAMBIA ESTO SEGÚN LA CONSOLA)
 # ==========================================
 ROM_FOLDER = "/home/carlos/Descargas/Moon/Roms/3ds/"
 EXTENSION = ".cci"
@@ -12,9 +17,12 @@ RUNNER = "citra"       # Ej: mame, libretro, pcsx2
 PLATFORM = "Nintendo 3DS"   # Ej: Arcade, Sony PlayStation, Nintendo 64
 # ==========================================
 
-# RUTAS (Usando la lógica que te funcionó)
-DB_PATH = os.path.expanduser("~/.local/share/lutris/pga.db")
-CONFIG_DIR_MAIN = os.path.expanduser("~/.config/lutris/games/") 
+# 🕵️‍♂️ DETECCIÓN AUTOMÁTICA DE LUTRIS (NATIVO/FLATPAK)
+print("🔍 Detectando instalación de Lutris...")
+paths = get_lutris_paths()
+
+DB_PATH = paths['db_path']
+CONFIG_DIR_MAIN = paths['config_dir_main']
 
 def create_lutris_yaml(game_slug, rom_path, timestamp):
     # Nombre base: slug + timestamp

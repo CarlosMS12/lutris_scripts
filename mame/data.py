@@ -8,8 +8,13 @@ import time
 import ssl
 import subprocess
 import shutil
+import sys
 from io import BytesIO
 from PIL import Image # Requiere: pip install Pillow
+
+# Importar el detector universal
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from lutris_detector import get_lutris_paths
 
 # ==========================================
 # ⚙️ CONFIGURACIÓN
@@ -28,14 +33,15 @@ MANUAL_FIXES = {
 MAME_EXE = "/home/carlos/Descargas/MAME/MAME-0.283-1-anylinux-x86_64.AppImage"
 # ==========================================
 
-# --- RUTAS DE LUTRIS ---
-DB_PATH = os.path.expanduser("~/.local/share/lutris/pga.db")
-COVERS_DIR = os.path.expanduser("~/.local/share/lutris/coverart/")
-BANNERS_DIR = os.path.expanduser("~/.local/share/lutris/banners/")
-LUTRIS_ICONS_DIR = os.path.expanduser("~/.local/share/lutris/icons/")
+# 🕵️‍♂️ DETECCIÓN AUTOMÁTICA DE LUTRIS (NATIVO/FLATPAK)
+print("🔍 Detectando instalación de Lutris...")
+paths = get_lutris_paths()
 
-# --- RUTA DEL SISTEMA (EL HALLAZGO) ---
-SYSTEM_ICONS_DIR = os.path.expanduser("~/.local/share/icons/hicolor/128x128/apps/")
+DB_PATH = paths['db_path']
+COVERS_DIR = paths['covers_dir']
+BANNERS_DIR = paths['banners_dir']
+LUTRIS_ICONS_DIR = paths['lutris_icons_dir']
+SYSTEM_ICONS_DIR = paths['system_icons_dir']
 
 # SSL Bypass
 ctx = ssl.create_default_context()
